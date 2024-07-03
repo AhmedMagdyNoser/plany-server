@@ -1,5 +1,6 @@
 const express = require("express");
 const corsHandler = require("./middlewares/corsHandler");
+const cookiesParser = require("./middlewares/cookiesParser");
 
 const app = express();
 
@@ -11,6 +12,8 @@ require("./config/database")();
 // ------------------------ Middlewares ------------------------
 
 app.use(corsHandler());
+
+app.use(cookiesParser);
 
 app.use(express.json());
 
