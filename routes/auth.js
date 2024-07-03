@@ -1,4 +1,5 @@
 const Router = require("express").Router();
+
 const controller = require("../controllers/auth");
 
 const {
@@ -16,5 +17,7 @@ Router.post(
   validatePassword,
   controller.register
 );
+
+Router.post("/login", controller.login);
 
 module.exports = Router;

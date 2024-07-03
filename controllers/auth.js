@@ -18,4 +18,27 @@ module.exports = {
       res.status(500).send(error.message);
     }
   },
+
+  login: async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      // Check if the email exists
+      const user = await User.findOne({ email });
+      if (!user)
+        return res.status(401).send("Please verify your email and password and try again.");
+      // Check if the password is correct
+      const validPassword = await bcrypt.compare(password, user.password);
+      if (!validPassword)
+        return res.status(401).send("Please verify your email and password and try again.");
+      // Send a response with the user's details excluding the password
+      res.json({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        createdAt: user.createdAt,
+      });
+    } catch (error) {
+      res.status(500).send(error.message);
+    }
+  },
 };
