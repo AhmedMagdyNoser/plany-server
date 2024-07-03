@@ -3,17 +3,22 @@ const EMAIL_PART_REGEX = /[a-zA-Z_\d]([a-zA-Z_\d.-]*[a-zA-Z_\d])?/;
 const EMAIL_REGEX = new RegExp(`^${EMAIL_PART_REGEX.source}@${EMAIL_PART_REGEX.source}\\.[a-zA-Z0-9]{2,}$`);
 const PASSWORD_REGEX = /^.{8,}$/;
 
+const validateName = (name, nameLabel) => {
+  if (!name) return { valid: false, status: 400, message: `Please provide a ${nameLabel}.` };
+  if (!NAME_REGEX.test(name))
+    return { valid: false, status: 400, message: `The ${nameLabel} should only contain alphabets.` };
+  return { valid: true };
+};
+
 const validateFirstName = (req, res, next) => {
-  const firstName = req.body.firstName;
-  if (!firstName) return res.status(400).send("Please provide a first name.");
-  if (!NAME_REGEX.test(firstName)) return res.status(400).send("The first name should only contain alphabets.");
+  const { valid, status, message } = validateName(req.body.firstName, "first name");
+  if (!valid) return res.status(status).send(message);
   next();
 };
 
 const validateLastName = (req, res, next) => {
-  const lastName = req.body.lastName;
-  if (!lastName) return res.status(400).send("Please provide a last name.");
-  if (!NAME_REGEX.test(lastName)) return res.status(400).send("The last name should only contain alphabets.");
+  const { valid, status, message } = validateName(req.body.lastName, "last name");
+  if (!valid) return res.status(status).send(message);
   next();
 };
 
