@@ -44,4 +44,19 @@ module.exports = {
       res.status(500).send(error.message);
     }
   },
+
+  logout: async (req, res) => {
+    try {
+      // Get the refresh token from the cookies
+      const refreshToken = req.cookies?.refreshToken;
+      if (!refreshToken) return res.sendStatus(204);
+      // Delete the refresh token from the user in the database
+      await User.updateOne({ refreshToken }, { refreshToken: "" });
+      // Clear the refresh token cookie
+      res.clearCookie("refreshToken");
+      res.sendStatus(204);
+    } catch (error) {
+      res.status(500).send(error.message);
+    }
+  },
 };

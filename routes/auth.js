@@ -8,4 +8,6 @@ Router.post("/register", validateFirstName, validateLastName, validateEmail, val
 
 Router.post("/login", controller.login);
 
+Router.post("/logout", controller.logout);
+
 module.exports = Router;
