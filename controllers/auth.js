@@ -7,7 +7,8 @@ const { generateAccessToken, generateRefreshToken } = require("../helpers/genera
 module.exports = {
   register: async (req, res) => {
     try {
-      const { firstName, lastName, email, password } = req.body;
+      let { firstName, lastName, email, password } = req.body;
+      email = email.toLowerCase();
       // Check if the email already exists
       const existingEmail = await User.findOne({ email });
       if (existingEmail) return res.status(409).send("Looks like this email already exists.");
@@ -27,7 +28,8 @@ module.exports = {
 
   login: async (req, res) => {
     try {
-      const { email, password } = req.body;
+      let { email, password } = req.body;
+      email = email.toLowerCase();
       const loginErrorMsg = "Please verify your email and password and try again.";
       // Check if the email exists
       const user = await User.findOne({ email }).select("+password");
