@@ -8,7 +8,7 @@ Router.get("/", controller.index);
 
 Router.get("/:id", controller.get);
 
-// Router.patch("/:id", controller.update);
+Router.patch("/:id", controller.update);
 
 // Router.delete("/:id", controller.delete);
 
