@@ -30,7 +30,7 @@ module.exports = {
     try {
       let { email, password } = req.body;
       email = email.toLowerCase();
-      const loginErrorMsg = "Please verify your email and password and try again.";
+      const loginErrorMsg = "Please check your email and password and try again.";
       // Check if the email exists
       const user = await User.findOne({ email }).select("+password");
       if (!user) return res.status(401).send(loginErrorMsg);
