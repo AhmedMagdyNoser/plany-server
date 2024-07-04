@@ -4,7 +4,7 @@ const controller = require("../controllers/tasks");
 
 Router.post("/", controller.create);
 
-// Router.get("/", controller.index);
+Router.get("/", controller.index);
 
 // Router.put("/:id", controller.update);
 

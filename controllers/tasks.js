@@ -12,4 +12,13 @@ module.exports = {
       res.status(500).send(error.message);
     }
   },
+
+  index: async (req, res) => {
+    try {
+      const user = await User.findById(req.user._id);
+      res.status(200).json(user.tasks);
+    } catch (error) {
+      res.status(500).send(error.message);
+    }
+  }
 };
