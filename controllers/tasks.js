@@ -39,4 +39,18 @@ module.exports = {
       res.status(500).send(error.message);
     }
   },
+
+  delete: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = await User.findById(req.user._id);
+      const task = user.tasks.id(id);
+      if (!task) return res.status(404).send("Task not found");
+      user.tasks.remove(task); // the remove function is a mongoose helper function to remove a subdocument
+      await user.save();
+      res.sendStatus(204);
+    } catch (error) {
+      res.status(500).send(error.message);
+    }
+  },
 };
