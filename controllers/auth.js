@@ -30,7 +30,7 @@ module.exports = {
       const { email, password } = req.body;
       const loginErrorMsg = "Please verify your email and password and try again.";
       // Check if the email exists
-      const user = await User.findOne({ email });
+      const user = await User.findOne({ email }).select("+password");
       if (!user) return res.status(401).send(loginErrorMsg);
       // Check if the password is correct
       const validPassword = await bcrypt.compare(password, user.password);
