@@ -1,6 +1,7 @@
 const express = require("express");
 const corsHandler = require("./middlewares/corsHandler");
 const cookiesParser = require("./middlewares/cookiesParser");
+const verifyAccessToken = require("./middlewares/verifyAccessToken");
 
 const app = express();
 
@@ -22,6 +23,9 @@ app.use(express.urlencoded({ extended: false }));
 // ------------------------ Routes ------------------------
 
 app.use("/auth", require("./routes/auth"));
+
+app.use(verifyAccessToken); // Protect the routes after this middleware
+app.use("/tasks", require("./routes/tasks"));
 
 // ------------------------ Server ------------------------
 
