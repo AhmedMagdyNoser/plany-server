@@ -10,4 +10,6 @@ Router.post("/login", controller.login);
 
 Router.post("/logout", controller.logout);
 
+Router.get("/refresh-access-token", controller.refreshAccessToken);
+
 module.exports = Router;

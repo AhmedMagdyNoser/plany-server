@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const cookiesOptions = require("../helpers/cookiesOptions");
 const { generateAccessToken, generateRefreshToken } = require("../helpers/generateJWT");
 
@@ -55,6 +56,25 @@ module.exports = {
       // Clear the refresh token cookie
       res.clearCookie("refreshToken");
       res.sendStatus(204);
+    } catch (error) {
+      res.status(500).send(error.message);
+    }
+  },
+
+  refreshAccessToken: async (req, res) => {
+    try {
+      // Get the refresh token from the cookies
+      const refreshToken = req.cookies?.refreshToken;
+      if (!refreshToken) return res.status(401).send("Please login first.");
+      // Check if the refresh token exists
+      const user = await User.findOne({ refreshToken });
+      if (!user) return res.status(403).send("Invalid refresh token.");
+      // Check if the refresh token is expired
+      jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (error) => {
+        if (error) return res.status(403).send("Invalid refresh token.");
+        // Generate a new access token and send it as a response
+        return res.send(generateAccessToken(user));
+      });
     } catch (error) {
       res.status(500).send(error.message);
     }
