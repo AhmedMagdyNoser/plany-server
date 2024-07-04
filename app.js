@@ -26,6 +26,7 @@ app.use("/auth", require("./routes/auth"));
 
 app.use(verifyAccessToken); // Protect the routes after this middleware
 app.use("/tasks", require("./routes/tasks"));
+app.use("/notes", require("./routes/notes"));
 
 // ------------------------ Server ------------------------
 
