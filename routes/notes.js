@@ -1,8 +1,8 @@
 const Router = require("express").Router();
 
-// const controller = require("../controllers/notes");
+const controller = require("../controllers/notes");
 
-// Router.post("/", controller.create);
+Router.post("/", controller.create);
 
 // Router.get("/", controller.index);
 
