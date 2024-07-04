@@ -6,7 +6,7 @@ Router.post("/", controller.create);
 
 Router.get("/", controller.index);
 
-// Router.get("/:id", controller.get);
+Router.get("/:id", controller.get);
 
 // Router.patch("/:id", controller.update);
 

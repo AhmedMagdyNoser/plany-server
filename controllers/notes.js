@@ -23,4 +23,16 @@ module.exports = {
       res.status(500).send(error.message);
     }
   },
+
+  get: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = await User.findById(req.user._id);
+      const note = user.notes.id(id);
+      if (!note) return res.status(404).send("Note not found");
+      res.status(200).json(note);
+    } catch (error) {
+      res.status(500).send(error.message);
+    }
+  },
 };
