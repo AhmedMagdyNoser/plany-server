@@ -73,7 +73,7 @@ module.exports = {
       jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (error) => {
         if (error) return res.status(403).send("Invalid refresh token.");
         // Generate a new access token and send it as a response
-        return res.send(generateAccessToken(user));
+        res.send(generateAccessToken(user));
       });
     } catch (error) {
       res.status(500).send(error.message);
