@@ -10,6 +10,6 @@ Router.get("/:id", controller.get);
 
 Router.patch("/:id", controller.update);
 
-// Router.delete("/:id", controller.delete);
+Router.delete("/:id", controller.delete);
 
 module.exports = Router;
