@@ -29,6 +29,12 @@ const userSchema = new mongoose.Schema(
     refreshToken: { type: String, default: "", select: false },
     tasks: { type: [tasksSchema], default: [] },
     notes: { type: [noteSchema], default: [] },
+    security: {
+      verificationCode: { type: String, default: "", select: false },
+      verificationCodeExpiration: { type: Date, default: null, select: false },
+      passwordResetCode: { type: String, default: "", select: false },
+      passwordResetCodeExpiration: { type: Date, default: null, select: false },
+    },
   },
   { timestamps: true }
 );

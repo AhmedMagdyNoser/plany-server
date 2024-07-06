@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const cookiesOptions = require("../helpers/cookiesOptions");
 const { generateAccessToken, generateRefreshToken } = require("../helpers/generateJWT");
+const { PURPOSES, sendVerificationEmail } = require("../helpers/mailSender");
 
 module.exports = {
   register: async (req, res) => {
@@ -78,6 +79,34 @@ module.exports = {
         // Generate a new access token and send it as a response
         res.send(generateAccessToken(user));
       });
+    } catch (error) {
+      res.status(500).send(error.message);
+    }
+  },
+
+  sendVerificationCode: async (req, res) => {
+    try {
+      const { email, purpose } = req.body;
+      // The purpose must exclusively be one of the following: resetForgottenPassword, verifyEmail, or changeEmail
+      if (!email) return res.status(400).send("Please provide an email.");
+      if (!purpose) return res.status(400).send("Please provide a purpose.");
+      if (!Object.values(PURPOSES).includes(purpose)) return res.status(400).send("Please provide a valid purpose.");
+      const user = await User.findOne({ email });
+      if (!user) return res.status(404).send("User not found.");
+      // Generate a verification code and set its expiration time
+      const verificationCode = await bcrypt.hash(Math.floor(100000 + Math.random() * 900000).toString(), 10);
+      const verificationCodeExpiration = Date.now() + 1000 * 60 * process.env.VERIFICATION_CODE_LIFE;
+      // Save the verification code in the database
+      await User.updateOne(
+        { email },
+        {
+          "security.verificationCode": verificationCode,
+          "security.verificationCodeExpiration": verificationCodeExpiration,
+        }
+      );
+      // Send the verification code to the user's email
+      await sendVerificationEmail(email, purpose, verificationCode);
+      res.sendStatus(200);
     } catch (error) {
       res.status(500).send(error.message);
     }
