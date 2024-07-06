@@ -24,9 +24,8 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use("/auth", require("./routes/auth"));
 
-app.use(verifyAccessToken); // Protect the routes after this middleware
-app.use("/tasks", require("./routes/tasks"));
-app.use("/notes", require("./routes/notes"));
+app.use("/tasks", verifyAccessToken, require("./routes/tasks"));
+app.use("/notes", verifyAccessToken, require("./routes/notes"));
 
 // ------------------------ Server ------------------------
 
