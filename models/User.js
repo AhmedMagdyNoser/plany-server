@@ -30,10 +30,9 @@ const userSchema = new mongoose.Schema(
     tasks: { type: [tasksSchema], default: [] },
     notes: { type: [noteSchema], default: [] },
     security: {
+      passwordResetToken: { type: String, default: "", select: false },
       verificationCode: { type: String, default: "", select: false },
       verificationCodeExpiration: { type: Date, default: null, select: false },
-      passwordResetCode: { type: String, default: "", select: false },
-      passwordResetCodeExpiration: { type: Date, default: null, select: false },
     },
   },
   { timestamps: true }
