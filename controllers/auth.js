@@ -29,6 +29,7 @@ module.exports = {
   login: async (req, res) => {
     try {
       let { email, password } = req.body;
+      if (!email || !password) return res.status(400).send("Please provide an email and a password.");
       email = email.toLowerCase();
       const loginErrorMsg = "Please check your email and password and try again.";
       // Check if the email exists

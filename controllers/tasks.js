@@ -4,7 +4,7 @@ module.exports = {
   create: async (req, res) => {
     try {
       const { title } = req.body;
-      if (!title) return res.status(400).send("Title is required");
+      if (!title) return res.status(400).send("Task title is required");
       const user = await User.findById(req.user._id);
       user.tasks.push({ title });
       await user.save();
