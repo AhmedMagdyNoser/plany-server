@@ -97,7 +97,8 @@ module.exports = {
       let { email, purpose } = req.body;
       if (!email) return res.status(400).send("Please provide an email.");
       if (!purpose) return res.status(400).send("Please provide a purpose.");
-      email = email.toLowerCase();
+      email = email.trim().toLowerCase();
+      purpose = purpose.trim();
       // Check if the user exists
       const user = await User.findOne({ email });
       if (!user) return res.status(404).send("User not found.");
@@ -110,8 +111,7 @@ module.exports = {
           const { hashedVerificationCode, verificationCode, verificationCodeExpiration } = await generateVerificationCode();
           // Save it for the current user
           await user.updateOne({
-            "security.resetPasswordVerification.code": hashedVerificationCode,
-            "security.resetPasswordVerification.expiration": verificationCodeExpiration,
+            "security.resetPasswordVerification": { code: hashedVerificationCode, expiration: verificationCodeExpiration },
           });
           // Send it to the his email
           await sendVerificationCodeToEmail(email, purpose, verificationCode);
@@ -124,8 +124,7 @@ module.exports = {
           const { hashedVerificationCode, verificationCode, verificationCodeExpiration } = await generateVerificationCode();
           // Save it for the current user
           await user.updateOne({
-            "security.verifyEmailVerification.code": hashedVerificationCode,
-            "security.verifyEmailVerification.expiration": verificationCodeExpiration,
+            "security.verifyEmailVerification": { code: hashedVerificationCode, expiration: verificationCodeExpiration },
           });
           // Send it to the his email
           await sendVerificationCodeToEmail(email, purpose, verificationCode);
@@ -134,7 +133,7 @@ module.exports = {
         case PURPOSES.CHANGE_EMAIL: {
           let { newEmail } = req.body;
           if (!newEmail) return res.status(400).send("Please provide the new email.");
-          newEmail = newEmail.toLowerCase();
+          newEmail = newEmail.trim().toLowerCase();
           // Check if the new email is already registered.
           if (email === newEmail) return res.status(400).send("Please provide a different email.");
           let existingEmail = await User.findOne({ email: newEmail });
@@ -143,9 +142,11 @@ module.exports = {
           const { hashedVerificationCode, verificationCode, verificationCodeExpiration } = await generateVerificationCode();
           // Save it for the current user
           await user.updateOne({
-            "security.changeEmailVerification.code": hashedVerificationCode,
-            "security.changeEmailVerification.expiration": verificationCodeExpiration,
-            "security.changeEmailVerification.newEmail": newEmail,
+            "security.changeEmailVerification": {
+              code: hashedVerificationCode,
+              expiration: verificationCodeExpiration,
+              newEmail,
+            },
           });
           // Send it to the the NEW email
           await sendVerificationCodeToEmail(newEmail, purpose, verificationCode);
