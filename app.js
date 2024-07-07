@@ -24,6 +24,7 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use("/auth", require("./routes/auth"));
 
+app.use("/profile", verifyAccessToken, require("./routes/profile"));
 app.use("/tasks", verifyAccessToken, require("./routes/tasks"));
 app.use("/notes", verifyAccessToken, require("./routes/notes"));
 
