@@ -30,9 +30,20 @@ const userSchema = new mongoose.Schema(
     tasks: { type: [tasksSchema], default: [] },
     notes: { type: [noteSchema], default: [] },
     security: {
-      passwordResetToken: { type: String, default: "", select: false },
-      verificationCode: { type: String, default: "", select: false },
-      verificationCodeExpiration: { type: Date, default: null, select: false },
+      resetPasswordToken: { type: String, default: "", select: false },
+      resetPasswordVerification: {
+        code: { type: String, default: "", select: false },
+        expiration: { type: Date, default: null, select: false },
+      },
+      verifyEmailVerification: {
+        code: { type: String, default: "", select: false },
+        expiration: { type: Date, default: null, select: false },
+      },
+      changeEmailVerification: {
+        code: { type: String, default: "", select: false },
+        expiration: { type: Date, default: null, select: false },
+        newEmail: { type: String, default: "", select: false },
+      },
     },
   },
   { timestamps: true }

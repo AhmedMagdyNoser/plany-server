@@ -103,19 +103,35 @@ module.exports = {
       if (!user) return res.status(404).send("User not found.");
       // If the user exists
       switch (purpose) {
-        case PURPOSES.RESET_PASSWORD:
+        case PURPOSES.RESET_PASSWORD: {
           // Check if the user email is not verified
-          if (!user.emailVerified) return res.status(401).send("Email is not verified.");
-          // Generate a verification code, save it for the current user, and send it to the his email
-          await generateAndSendVerificationCode(user, email, purpose);
+          if (!user.emailVerified) return res.status(401).send("Your email is not verified.");
+          // Generate a verification code
+          const { hashedVerificationCode, verificationCode, verificationCodeExpiration } = await generateVerificationCode();
+          // Save it for the current user
+          await user.updateOne({
+            "security.resetPasswordVerification.code": hashedVerificationCode,
+            "security.resetPasswordVerification.expiration": verificationCodeExpiration,
+          });
+          // Send it to the his email
+          await sendVerificationCodeToEmail(email, purpose, verificationCode);
           return res.sendStatus(200);
-        case PURPOSES.VERIFY_EMAIL:
+        }
+        case PURPOSES.VERIFY_EMAIL: {
           // Check if the user email is already verified
-          if (user.emailVerified) return res.status(400).send("Email is already verified.");
-          // Generate a verification code, save it for the current user, and send it to the his email
-          await generateAndSendVerificationCode(user, email, purpose);
+          if (user.emailVerified) return res.status(400).send("Your email is already verified.");
+          // Generate a verification code
+          const { hashedVerificationCode, verificationCode, verificationCodeExpiration } = await generateVerificationCode();
+          // Save it for the current user
+          await user.updateOne({
+            "security.verifyEmailVerification.code": hashedVerificationCode,
+            "security.verifyEmailVerification.expiration": verificationCodeExpiration,
+          });
+          // Send it to the his email
+          await sendVerificationCodeToEmail(email, purpose, verificationCode);
           return res.sendStatus(200);
-        case PURPOSES.CHANGE_EMAIL:
+        }
+        case PURPOSES.CHANGE_EMAIL: {
           let { newEmail } = req.body;
           if (!newEmail) return res.status(400).send("Please provide the new email.");
           newEmail = newEmail.toLowerCase();
@@ -123,9 +139,18 @@ module.exports = {
           if (email === newEmail) return res.status(400).send("Please provide a different email.");
           let existingEmail = await User.findOne({ email: newEmail });
           if (existingEmail) return res.status(409).send("Looks like this email already exists.");
-          // Generate a verification code, save it for the current user, and send it to the new email
-          await generateAndSendVerificationCode(user, newEmail, purpose);
+          // Generate a verification code
+          const { hashedVerificationCode, verificationCode, verificationCodeExpiration } = await generateVerificationCode();
+          // Save it for the current user
+          await user.updateOne({
+            "security.changeEmailVerification.code": hashedVerificationCode,
+            "security.changeEmailVerification.expiration": verificationCodeExpiration,
+            "security.changeEmailVerification.newEmail": newEmail,
+          });
+          // Send it to the the NEW email
+          await sendVerificationCodeToEmail(newEmail, purpose, verificationCode);
           return res.sendStatus(200);
+        }
         default:
           return res.status(400).send(`Please provide a valid purpose: ${Object.values(PURPOSES).join(" | ")}.`);
       }
@@ -133,23 +158,11 @@ module.exports = {
       res.status(500).send(error.message);
     }
 
-    async function generateAndSendVerificationCode(user, email, purpose) {
-      // Generate a verification code and save it for the current user
-      const verificationCode = await generateVerificationCodeForUser(user);
-      // Send the verification code to the user's email
-      await sendVerificationCodeToEmail(email, purpose, verificationCode);
-    }
-
-    async function generateVerificationCodeForUser(user) {
+    async function generateVerificationCode() {
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
       const verificationCodeExpiration = Date.now() + 1000 * 60 * process.env.VERIFICATION_CODE_LIFE;
-      // Save the verification code in the database
       const hashedVerificationCode = await bcrypt.hash(verificationCode, 10);
-      await user.updateOne({
-        "security.verificationCode": hashedVerificationCode,
-        "security.verificationCodeExpiration": verificationCodeExpiration,
-      });
-      return verificationCode;
+      return { hashedVerificationCode, verificationCode, verificationCodeExpiration };
     }
   },
 
