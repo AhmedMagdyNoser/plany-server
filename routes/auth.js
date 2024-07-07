@@ -14,7 +14,7 @@ Router.get("/refresh-access-token", controller.refreshAccessToken);
 
 Router.post("/send-verification-code", controller.sendVerificationCode);
 
-// Router.post("/verify-verification-code", controller.verifyVerificationCode);
+Router.post("/verify-verification-code", controller.verifyVerificationCode);
 
 // Router.patch("/reset-password", controller.resetPassword);
 
