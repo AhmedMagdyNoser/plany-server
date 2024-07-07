@@ -16,7 +16,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendVerificationEmail = async (to, purpose, verificationCode) => {
+const sendVerificationCodeToEmail = async (to, purpose, verificationCode) => {
   await transporter.sendMail({
     to,
     from: `"Plany ✨🚀" ${process.env.EMAIL_SENDER}`,
@@ -41,5 +41,5 @@ function getHtmlVerificationContent(verificationCode) {
 
 module.exports = {
   PURPOSES,
-  sendVerificationEmail,
+  sendVerificationCodeToEmail,
 };
