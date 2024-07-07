@@ -268,7 +268,6 @@ module.exports = {
           return res.status(400).send(`Please provide a valid purpose: ${Object.values(PURPOSES).join(" | ")}.`);
       }
     } catch (error) {
-      console.error(error);
       res.status(500).send(error);
     }
 
@@ -285,6 +284,31 @@ module.exports = {
       if (!isMatch) return { valid: false, status: 401, message: "Invalid verification code." };
 
       return { valid: true };
+    }
+  },
+
+  // ---------------------------------------
+
+  resetPassword: async (req, res) => {
+    try {
+      let { token, newPassword } = req.body;
+      if (!token) return res.status(400).send("Please provide a token.");
+      if (!newPassword) return res.status(400).send("Please provide a new password.");
+
+      // Verify the token
+      jwt.verify(token, process.env.PASSWORD_RESET_TOKEN_SECRET, async (error, decoded) => {
+        if (error) return res.status(401).send("Invalid token. Please try again.");
+
+        // Hash the new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update the password
+        await User.updateOne({ email: decoded.email }, { password: hashedPassword });
+
+        res.sendStatus(204);
+      });
+    } catch (error) {
+      res.status(500).send(error);
     }
   },
 };
