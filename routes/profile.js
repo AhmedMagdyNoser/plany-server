@@ -2,10 +2,10 @@ const Router = require("express").Router();
 
 const controller = require("../controllers/profile");
 
-const { validateFirstName, validateLastName, validatePassword } = require("../middlewares/validators/user");
+const { validateFirstName, validateLastName } = require("../middlewares/validators/user");
 
 Router.patch("/change-name", validateFirstName, validateLastName, controller.changeName);
 
-// Router.patch("/change-password", validatePassword, controller.changePassword);
+Router.patch("/change-password", controller.changePassword);
 
 module.exports = Router;
