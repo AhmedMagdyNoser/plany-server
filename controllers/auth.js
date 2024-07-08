@@ -14,6 +14,7 @@ const {
   validateNewEmail,
   validatePassword,
   validateNewPassword,
+  requirePassword,
   validatePurpose,
 } = require("../middlewares/validators/user");
 
@@ -54,8 +55,7 @@ module.exports = {
 
   login: [
     ...validateEmail,
-    // Validate the password is not empty (we don't need to validate the password length here)
-    body("password").notEmpty().withMessage("Please provide your password."),
+    ...requirePassword, // Without validation
     getErrorMsg,
     async (req, res) => {
       try {

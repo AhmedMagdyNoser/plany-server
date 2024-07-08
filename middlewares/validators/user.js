@@ -42,6 +42,11 @@ const validateNewPassword = [
     .withMessage("The new password should be at least 8 characters long."),
 ];
 
+const requirePassword = [
+  // Without validation
+  body("password").notEmpty().withMessage("Please provide your password."),
+];
+
 const validatePurpose = [
   body("purpose")
     .trim()
@@ -58,5 +63,6 @@ module.exports = {
   validateNewEmail,
   validatePassword,
   validateNewPassword,
+  requirePassword,
   validatePurpose,
 };
