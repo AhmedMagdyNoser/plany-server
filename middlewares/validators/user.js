@@ -1,4 +1,5 @@
 const { body, validationResult } = require("express-validator");
+const { PURPOSES } = require("../../helpers/mailSender");
 
 function getErrorMsg(req, res, next) {
   const errors = validationResult(req);
@@ -14,7 +15,15 @@ const validateNames = [
 const validateEmail = [body("email").trim().toLowerCase().isEmail().withMessage("Please provide a valid email address.")];
 
 const validateNewEmail = [
-  body("newEmail").trim().toLowerCase().isEmail().withMessage("Please provide a valid new email address."),
+  // This is used only in the send-verification-code route where the purpose is to change email
+  body("newEmail")
+    .if(body("purpose").equals(PURPOSES.CHANGE_EMAIL))
+    .trim()
+    .notEmpty()
+    .withMessage("A new email is required for changing email.")
+    .toLowerCase()
+    .isEmail()
+    .withMessage("Please provide a valid new email address."),
 ];
 
 const validatePassword = [
@@ -33,6 +42,15 @@ const validateNewPassword = [
     .withMessage("The new password should be at least 8 characters long."),
 ];
 
+const validatePurpose = [
+  body("purpose")
+    .trim()
+    .notEmpty()
+    .withMessage("Please provide a purpose.")
+    .isIn([PURPOSES.RESET_PASSWORD, PURPOSES.VERIFY_EMAIL, PURPOSES.CHANGE_EMAIL])
+    .withMessage(`Purpose must be one of the following: ${Object.values(PURPOSES).join(", ")}.`),
+];
+
 module.exports = {
   getErrorMsg,
   validateNames,
@@ -40,4 +58,5 @@ module.exports = {
   validateNewEmail,
   validatePassword,
   validateNewPassword,
+  validatePurpose,
 };
