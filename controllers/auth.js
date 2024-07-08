@@ -19,7 +19,7 @@ module.exports = {
       const refreshToken = generateRefreshToken(email);
       res.cookie("refreshToken", refreshToken, cookiesOptions);
       // Register the user in the database
-      const user = await User.create({ firstName, lastName, email, password: hashedPassword, refreshToken });
+      const user = await User.create({ firstName, lastName, email, password: hashedPassword, "security.refreshToken": refreshToken });
       // generate an access token and send it as a response
       res.status(201).send(generateAccessToken(user));
     } catch (error) {
@@ -44,7 +44,7 @@ module.exports = {
       // Generate a refresh token, set it as a cookie, and save it in the database
       const refreshToken = generateRefreshToken(email);
       res.cookie("refreshToken", refreshToken, cookiesOptions);
-      await User.updateOne({ email }, { refreshToken });
+      await User.updateOne({ email }, { "security.refreshToken": refreshToken });
       // generate an access token and send it as a response
       res.send(generateAccessToken(user));
     } catch (error) {
@@ -60,7 +60,7 @@ module.exports = {
       const refreshToken = req.cookies?.refreshToken;
       if (!refreshToken) return res.sendStatus(204);
       // Delete the refresh token from the user in the database
-      await User.updateOne({ refreshToken }, { refreshToken: "" });
+      await User.updateOne({ "security.refreshToken": refreshToken }, { "security.refreshToken": "" });
       // Clear the refresh token cookie
       res.clearCookie("refreshToken");
       res.sendStatus(204);
@@ -77,7 +77,7 @@ module.exports = {
       const refreshToken = req.cookies?.refreshToken;
       if (!refreshToken) return res.status(401).send("Please login first.");
       // Check if the refresh token exists
-      const user = await User.findOne({ refreshToken });
+      const user = await User.findOne({ "security.refreshToken": refreshToken });
       if (!user) return res.status(403).send("Invalid refresh token.");
       // Check if the refresh token is expired
       jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (error) => {

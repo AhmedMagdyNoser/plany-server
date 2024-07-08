@@ -26,10 +26,10 @@ const userSchema = new mongoose.Schema(
     emailVerified: { type: Boolean, default: false },
     profileImg: { type: String, default: "" },
     password: { type: String, required: true, select: false },
-    refreshToken: { type: String, default: "", select: false },
     tasks: { type: [tasksSchema], default: [] },
     notes: { type: [noteSchema], default: [] },
     security: {
+      refreshToken: { type: String, default: "", select: false },
       resetPasswordToken: { type: String, default: "", select: false },
       resetPasswordVerification: {
         code: { type: String, default: "", select: false },
