@@ -296,7 +296,7 @@ module.exports = {
             return res.status(400).send(`Please provide a valid purpose: ${Object.values(PURPOSES).join(", ")}.`);
         }
       } catch (error) {
-        res.status(500).send(error);
+        res.status(500).send(error.message);
       }
 
       async function validateVerificationCode(storedCode, storedExpiration, providedCode) {
@@ -318,26 +318,29 @@ module.exports = {
 
   // ---------------------------------------
 
-  resetPassword: async (req, res) => {
-    try {
-      let { token, newPassword } = req.body;
-      if (!token) return res.status(400).send("Please provide a token.");
-      if (!newPassword) return res.status(400).send("Please provide a new password.");
+  resetPassword: [
+    body("token").trim().notEmpty().withMessage("Please provide the reset password token."),
+    ...validateNewPassword,
+    getErrorMsg,
+    async (req, res) => {
+      try {
+        const { token, newPassword } = req.body;
 
-      // Verify the token
-      jwt.verify(token, process.env.PASSWORD_RESET_TOKEN_SECRET, async (error, decoded) => {
-        if (error) return res.status(401).send("Invalid token. Please try again.");
+        // Verify the token
+        jwt.verify(token, process.env.PASSWORD_RESET_TOKEN_SECRET, async (error, decoded) => {
+          if (error) return res.status(401).send("Invalid token. Please try again.");
 
-        // Hash the new password
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
+          // Hash the new password
+          const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        // Update the password and remove the reset password token
-        await User.updateOne({ email: decoded.email }, { password: hashedPassword, "security.resetPasswordToken": "" });
+          // Update the password and remove the reset password token
+          await User.updateOne({ email: decoded.email }, { password: hashedPassword, "security.resetPasswordToken": "" });
 
-        res.sendStatus(200);
-      });
-    } catch (error) {
-      res.status(500).send(error);
-    }
-  },
+          res.send("Password reset successfully.");
+        });
+      } catch (error) {
+        res.status(500).send(error.message);
+      }
+    },
+  ],
 };
