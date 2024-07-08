@@ -1,7 +1,8 @@
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
 
-const { getErrorMsg, validateNames, requirePassword, validateNewPassword } = require("../middlewares/validators/user");
+const { getErrorMsg } = require("../middlewares/validators");
+const { validateNames, requirePassword, validateNewPassword } = require("../middlewares/validators/user");
 
 module.exports = {
   changeName: [

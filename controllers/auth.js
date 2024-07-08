@@ -7,8 +7,8 @@ const { PURPOSES, sendVerificationCodeToEmail } = require("../helpers/mailSender
 const cookiesOptions = require("../helpers/cookiesOptions");
 
 const { body } = require("express-validator");
+const { getErrorMsg } = require("../middlewares/validators");
 const {
-  getErrorMsg,
   validateNames,
   validateEmail,
   validateNewEmail,
@@ -21,8 +21,8 @@ const {
 module.exports = {
   register: [
     ...validateNames,
-    ...validateEmail,
-    ...validatePassword,
+    validateEmail,
+    validatePassword,
     getErrorMsg,
     async (req, res) => {
       try {
@@ -54,8 +54,8 @@ module.exports = {
   // ---------------------------------------
 
   login: [
-    ...validateEmail,
-    ...requirePassword, // Without validation
+    validateEmail,
+    requirePassword, // Without validation
     getErrorMsg,
     async (req, res) => {
       try {
@@ -120,9 +120,9 @@ module.exports = {
   // ---------------------------------------
 
   sendVerificationCode: [
-    ...validateEmail,
-    ...validatePurpose,
-    ...validateNewEmail,
+    validateEmail,
+    validatePurpose,
+    validateNewEmail,
     getErrorMsg,
     async (req, res) => {
       try {
@@ -201,8 +201,8 @@ module.exports = {
   // ---------------------------------------
 
   verifyVerificationCode: [
-    ...validateEmail,
-    ...validatePurpose,
+    validateEmail,
+    validatePurpose,
     body("code").trim().notEmpty().withMessage("Please provide the verification code."),
     getErrorMsg,
     async (req, res) => {
@@ -320,7 +320,7 @@ module.exports = {
 
   resetPassword: [
     body("token").trim().notEmpty().withMessage("Please provide the reset password token."),
-    ...validateNewPassword,
+    validateNewPassword,
     getErrorMsg,
     async (req, res) => {
       try {
