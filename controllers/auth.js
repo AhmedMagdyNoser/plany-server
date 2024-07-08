@@ -51,28 +51,32 @@ module.exports = {
 
   // ---------------------------------------
 
-  login: async (req, res) => {
-    try {
-      let { email, password } = req.body;
-      if (!email || !password) return res.status(400).send("Please provide an email and a password.");
-      email = email.toLowerCase();
-      const loginErrorMsg = "Please check your email and password and try again.";
-      // Check if the email exists
-      const user = await User.findOne({ email }).select("+password");
-      if (!user) return res.status(401).send(loginErrorMsg);
-      // Check if the password is correct
-      const validPassword = await bcrypt.compare(password, user.password);
-      if (!validPassword) return res.status(401).send(loginErrorMsg);
-      // Generate a refresh token, set it as a cookie, and save it in the database
-      const refreshToken = generateRefreshToken(email);
-      res.cookie("refreshToken", refreshToken, cookiesOptions);
-      await User.updateOne({ email }, { "security.refreshToken": refreshToken });
-      // generate an access token and send it as a response
-      res.send(generateAccessToken(user));
-    } catch (error) {
-      res.status(500).send(error.message);
-    }
-  },
+  login: [
+    ...validateEmail,
+    // Validate the password is not empty (we don't need to validate the password length here)
+    body("password").notEmpty().withMessage("Please provide your password."),
+    getErrorMsg,
+    async (req, res) => {
+      try {
+        let { email, password } = req.body;
+        const loginErrorMsg = "Please check your email and password and try again.";
+        // Check if the email exists
+        const user = await User.findOne({ email }).select("+password");
+        if (!user) return res.status(401).send(loginErrorMsg);
+        // Check if the password is correct
+        const validPassword = await bcrypt.compare(password, user.password);
+        if (!validPassword) return res.status(401).send(loginErrorMsg);
+        // Generate a refresh token, set it as a cookie, and save it in the database
+        const refreshToken = generateRefreshToken(email);
+        res.cookie("refreshToken", refreshToken, cookiesOptions);
+        await User.updateOne({ email }, { "security.refreshToken": refreshToken });
+        // generate an access token and send it as a response
+        res.send(generateAccessToken(user));
+      } catch (error) {
+        res.status(500).send(error.message);
+      }
+    },
+  ],
 
   // ---------------------------------------
 
