@@ -1,10 +1,35 @@
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
 
+const cloudinary = require("../config/cloudinary");
+const upload = require("../middlewares/multer");
+
 const { getErrorMsg } = require("../middlewares/validators");
 const { validateNames, requirePassword, validateNewPassword } = require("../middlewares/validators/user");
 
 module.exports = {
+  uploadImg: [
+    upload.single("img"),
+    async (req, res) => {
+      if (!req.file) return res.status(400).send("Please upload an image.");
+      cloudinary.uploader.upload(
+        req.file.path,
+        { transformation: [{ width: 500, height: 500, gravity: "face", crop: "thumb" }] },
+        async (error, result) => {
+          if (error) return res.status(500).send(error.message);
+          try {
+            const user = await User.findByIdAndUpdate(req.user._id, { profileImg: result.secure_url }, { new: true });
+            res.send(user);
+          } catch (error) {
+            res.status(500).send(error.message);
+          }
+        }
+      );
+    },
+  ],
+
+  // ---------------------------------------
+
   changeName: [
     ...validateNames,
     getErrorMsg,
