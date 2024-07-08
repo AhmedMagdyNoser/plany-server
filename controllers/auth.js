@@ -25,7 +25,7 @@ module.exports = {
     getErrorMsg,
     async (req, res) => {
       try {
-        let { firstName, lastName, email, password } = req.body;
+        const { firstName, lastName, email, password } = req.body;
         // Check if the email already exists
         const existingEmail = await User.findOne({ email });
         if (existingEmail) return res.status(409).send("Looks like this email already exists.");
@@ -59,7 +59,7 @@ module.exports = {
     getErrorMsg,
     async (req, res) => {
       try {
-        let { email, password } = req.body;
+        const { email, password } = req.body;
         const loginErrorMsg = "Please check your email and password and try again.";
         // Check if the email exists
         const user = await User.findOne({ email }).select("+password");
@@ -164,7 +164,7 @@ module.exports = {
             const { newEmail } = req.body;
             // Check if the new email is already registered.
             if (email === newEmail) return res.status(400).send("Please provide a different email.");
-            let existingEmail = await User.findOne({ email: newEmail });
+            const existingEmail = await User.findOne({ email: newEmail });
             if (existingEmail) return res.status(409).send("Looks like this email already exists.");
             // Generate a verification code
             const { hashedVerificationCode, verificationCode, verificationCodeExpiration } =
@@ -200,130 +200,121 @@ module.exports = {
 
   // ---------------------------------------
 
-  verifyVerificationCode: async (req, res) => {
-    try {
-      let { email, purpose, code } = req.body;
-      if (!email) return res.status(400).send("Please provide an email.");
-      if (!purpose) return res.status(400).send("Please provide a purpose.");
-      if (!code) return res.status(400).send("Please provide the verification code.");
+  verifyVerificationCode: [
+    ...validateEmail,
+    ...validatePurpose,
+    body("code").trim().notEmpty().withMessage("Please provide the verification code."),
+    getErrorMsg,
+    async (req, res) => {
+      try {
+        const { email, purpose, code } = req.body;
+        // Check if the user exists
+        const user = await User.findOne({ email }).select(
+          "+security.resetPasswordToken " +
+            "+security.resetPasswordVerification.code " +
+            "+security.resetPasswordVerification.expiration " +
+            "+security.verifyEmailVerification.code " +
+            "+security.verifyEmailVerification.expiration " +
+            "+security.changeEmailVerification.code " +
+            "+security.changeEmailVerification.expiration " +
+            "+security.changeEmailVerification.newEmail"
+        );
+        if (!user) return res.status(404).send("User not found.");
 
-      email = email.trim().toLowerCase();
-      purpose = purpose.trim();
+        let validation;
 
-      // Check if the user exists
-      const user = await User.findOne({ email }).select(
-        "+security.resetPasswordToken " +
-          "+security.resetPasswordVerification.code " +
-          "+security.resetPasswordVerification.expiration " +
-          "+security.verifyEmailVerification.code " +
-          "+security.verifyEmailVerification.expiration " +
-          "+security.changeEmailVerification.code " +
-          "+security.changeEmailVerification.expiration " +
-          "+security.changeEmailVerification.newEmail"
-      );
+        switch (purpose) {
+          case PURPOSES.RESET_PASSWORD: {
+            const { resetPasswordVerification } = user.security;
 
-      if (!user) return res.status(404).send("User not found.");
+            // Validate the verification code
+            validation = await validateVerificationCode(
+              resetPasswordVerification.code,
+              resetPasswordVerification.expiration,
+              code
+            );
+            if (!validation.valid) return res.status(validation.status).send(validation.message);
 
-      let validation;
+            // Generate a reset password token
+            const resetPasswordToken = jwt.sign({ email }, process.env.PASSWORD_RESET_TOKEN_SECRET, {
+              expiresIn: `${process.env.PASSWORD_RESET_TOKEN_LIFE}s`,
+            });
+            user.security.resetPasswordToken = resetPasswordToken;
 
-      switch (purpose) {
-        case PURPOSES.RESET_PASSWORD: {
-          const { resetPasswordVerification } = user.security;
+            // Invalidate the verification code
+            user.security.resetPasswordVerification.code = "";
+            user.security.resetPasswordVerification.expiration = null;
 
-          // Validate the verification code
-          validation = await validateVerificationCode(
-            resetPasswordVerification.code,
-            resetPasswordVerification.expiration,
-            code
-          );
+            await user.save();
+            return res.send(resetPasswordToken);
+          }
+          case PURPOSES.VERIFY_EMAIL: {
+            const { verifyEmailVerification } = user.security;
 
-          if (!validation.valid) return res.status(validation.status).send(validation.message);
+            // Validate the verification code
+            validation = await validateVerificationCode(
+              verifyEmailVerification.code,
+              verifyEmailVerification.expiration,
+              code
+            );
+            if (!validation.valid) return res.status(validation.status).send(validation.message);
 
-          // Generate a reset password token
-          const resetPasswordToken = jwt.sign({ email }, process.env.PASSWORD_RESET_TOKEN_SECRET, {
-            expiresIn: `${process.env.PASSWORD_RESET_TOKEN_LIFE}s`,
-          });
+            // Verify the email
+            user.emailVerified = true;
 
-          user.security.resetPasswordToken = resetPasswordToken;
+            // Invalidate the verification code
+            user.security.verifyEmailVerification.code = "";
+            user.security.verifyEmailVerification.expiration = null;
 
-          // Invalidate the verification code
-          user.security.resetPasswordVerification.code = "";
-          user.security.resetPasswordVerification.expiration = null;
+            await user.save();
+            return res.send("Email verified successfully.");
+          }
+          case PURPOSES.CHANGE_EMAIL: {
+            const { changeEmailVerification } = user.security;
 
-          await user.save();
+            // Validate the verification code
+            validation = await validateVerificationCode(
+              changeEmailVerification.code,
+              changeEmailVerification.expiration,
+              code
+            );
+            if (!validation.valid) return res.status(400).send(validation.message);
 
-          return res.send(resetPasswordToken);
+            // Change the email and mark it as verified
+            user.email = changeEmailVerification.newEmail;
+            user.emailVerified = true;
+
+            // invalidate the verification code
+            user.security.changeEmailVerification.code = "";
+            user.security.changeEmailVerification.expiration = null;
+            user.security.changeEmailVerification.newEmail = "";
+
+            await user.save();
+            return res.send("Email changed successfully.");
+          }
+          default:
+            return res.status(400).send(`Please provide a valid purpose: ${Object.values(PURPOSES).join(", ")}.`);
         }
-        case PURPOSES.VERIFY_EMAIL: {
-          const { verifyEmailVerification } = user.security;
-
-          // Validate the verification code
-          validation = await validateVerificationCode(
-            verifyEmailVerification.code,
-            verifyEmailVerification.expiration,
-            code
-          );
-
-          if (!validation.valid) return res.status(validation.status).send(validation.message);
-
-          // Verify the email
-          user.emailVerified = true;
-
-          // Invalidate the verification code
-          user.security.verifyEmailVerification.code = "";
-          user.security.verifyEmailVerification.expiration = null;
-
-          await user.save();
-
-          return res.sendStatus(200);
-        }
-        case PURPOSES.CHANGE_EMAIL: {
-          const { changeEmailVerification } = user.security;
-
-          // Validate the verification code
-          validation = await validateVerificationCode(
-            changeEmailVerification.code,
-            changeEmailVerification.expiration,
-            code
-          );
-
-          if (!validation.valid) return res.status(400).send(validation.message);
-
-          // Change the email and mark it as verified
-          user.email = changeEmailVerification.newEmail;
-          user.emailVerified = true;
-
-          // invalidate the verification code
-          user.security.changeEmailVerification.code = "";
-          user.security.changeEmailVerification.expiration = null;
-          user.security.changeEmailVerification.newEmail = "";
-
-          await user.save();
-
-          return res.sendStatus(200);
-        }
-        default:
-          return res.status(400).send(`Please provide a valid purpose: ${Object.values(PURPOSES).join(" | ")}.`);
-      }
-    } catch (error) {
-      res.status(500).send(error);
-    }
-
-    async function validateVerificationCode(storedCode, storedExpiration, providedCode) {
-      if (!storedCode || !storedExpiration) {
-        return { valid: false, status: 400, message: "No verification code found." };
+      } catch (error) {
+        res.status(500).send(error);
       }
 
-      if (Date.now() > storedExpiration) {
-        return { valid: false, status: 401, message: "The verification code has expired." };
+      async function validateVerificationCode(storedCode, storedExpiration, providedCode) {
+        if (!storedCode || !storedExpiration) {
+          return { valid: false, status: 400, message: "No verification code found." };
+        }
+
+        if (Date.now() > storedExpiration) {
+          return { valid: false, status: 401, message: "The verification code has expired." };
+        }
+
+        const isMatch = await bcrypt.compare(providedCode, storedCode);
+        if (!isMatch) return { valid: false, status: 401, message: "Invalid verification code." };
+
+        return { valid: true };
       }
-
-      const isMatch = await bcrypt.compare(providedCode, storedCode);
-      if (!isMatch) return { valid: false, status: 401, message: "Invalid verification code." };
-
-      return { valid: true };
-    }
-  },
+    },
+  ],
 
   // ---------------------------------------
 
