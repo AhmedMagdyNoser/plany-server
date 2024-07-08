@@ -1,31 +1,53 @@
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const cookiesOptions = require("../helpers/cookiesOptions");
+
 const { generateAccessToken, generateRefreshToken } = require("../helpers/generateJWT");
 const { PURPOSES, sendVerificationCodeToEmail } = require("../helpers/mailSender");
+const cookiesOptions = require("../helpers/cookiesOptions");
+
+const { body, validationResult } = require("express-validator");
+const {
+  getErrorMsg,
+  validateNames,
+  validateEmail,
+  validateNewEmail,
+  validatePassword,
+  validateNewPassword,
+} = require("../middlewares/validators/user");
 
 module.exports = {
-  register: async (req, res) => {
-    try {
-      let { firstName, lastName, email, password } = req.body;
-      email = email.toLowerCase();
-      // Check if the email already exists
-      const existingEmail = await User.findOne({ email });
-      if (existingEmail) return res.status(409).send("Looks like this email already exists.");
-      // Hash the password
-      const hashedPassword = await bcrypt.hash(password, 10);
-      // Generate a refresh token and set it as a cookie
-      const refreshToken = generateRefreshToken(email);
-      res.cookie("refreshToken", refreshToken, cookiesOptions);
-      // Register the user in the database
-      const user = await User.create({ firstName, lastName, email, password: hashedPassword, "security.refreshToken": refreshToken });
-      // generate an access token and send it as a response
-      res.status(201).send(generateAccessToken(user));
-    } catch (error) {
-      res.status(500).send(error.message);
-    }
-  },
+  register: [
+    ...validateNames,
+    ...validateEmail,
+    ...validatePassword,
+    getErrorMsg,
+    async (req, res) => {
+      try {
+        let { firstName, lastName, email, password } = req.body;
+        // Check if the email already exists
+        const existingEmail = await User.findOne({ email });
+        if (existingEmail) return res.status(409).send("Looks like this email already exists.");
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+        // Generate a refresh token and set it as a cookie
+        const refreshToken = generateRefreshToken(email);
+        res.cookie("refreshToken", refreshToken, cookiesOptions);
+        // Register the user in the database
+        const user = await User.create({
+          firstName,
+          lastName,
+          email,
+          password: hashedPassword,
+          "security.refreshToken": refreshToken,
+        });
+        // generate an access token and send it as a response
+        res.status(201).send(generateAccessToken(user));
+      } catch (error) {
+        res.status(500).send(error.message);
+      }
+    },
+  ],
 
   // ---------------------------------------
 
