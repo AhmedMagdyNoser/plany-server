@@ -208,16 +208,16 @@ module.exports = {
 
           if (!validation.valid) return res.status(validation.status).send(validation.message);
 
-          // Invalidate the verification code after successful verification
-          user.security.resetPasswordVerification = {};
-
           // Generate a reset password token
           const resetPasswordToken = jwt.sign({ email }, process.env.PASSWORD_RESET_TOKEN_SECRET, {
             expiresIn: `${process.env.PASSWORD_RESET_TOKEN_LIFE}s`,
           });
 
-          // Save the reset password
           user.security.resetPasswordToken = resetPasswordToken;
+
+          // Invalidate the verification code
+          user.security.resetPasswordVerification.code = "";
+          user.security.resetPasswordVerification.expiration = null;
 
           await user.save();
 
@@ -235,9 +235,12 @@ module.exports = {
 
           if (!validation.valid) return res.status(validation.status).send(validation.message);
 
-          // Verify the email and invalidate the verification code
-          user.security.verifyEmailVerification = {};
+          // Verify the email
           user.emailVerified = true;
+
+          // Invalidate the verification code
+          user.security.verifyEmailVerification.code = "";
+          user.security.verifyEmailVerification.expiration = null;
 
           await user.save();
 
@@ -255,10 +258,14 @@ module.exports = {
 
           if (!validation.valid) return res.status(400).send(validation.message);
 
-          // Invalidate the verification code and change the email
-          user.email = changeEmailVerification.newEmail; // I think the problem here
-          user.emailVerified = true; // Mark the new email as verified
-          user.security.changeEmailVerification = {};
+          // Change the email and mark it as verified
+          user.email = changeEmailVerification.newEmail;
+          user.emailVerified = true;
+
+          // invalidate the verification code
+          user.security.changeEmailVerification.code = "";
+          user.security.changeEmailVerification.expiration = null;
+          user.security.changeEmailVerification.newEmail = "";
 
           await user.save();
 
@@ -302,10 +309,10 @@ module.exports = {
         // Hash the new password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        // Update the password
-        await User.updateOne({ email: decoded.email }, { password: hashedPassword });
+        // Update the password and remove the reset password token
+        await User.updateOne({ email: decoded.email }, { password: hashedPassword, "security.resetPasswordToken": "" });
 
-        res.sendStatus(204);
+        res.sendStatus(200);
       });
     } catch (error) {
       res.status(500).send(error);
