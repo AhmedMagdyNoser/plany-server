@@ -330,6 +330,9 @@ module.exports = {
         jwt.verify(token, process.env.PASSWORD_RESET_TOKEN_SECRET, async (error, decoded) => {
           if (error) return res.status(401).send("Invalid token. Please try again.");
 
+          const user = await User.findOne({ email: decoded.email });
+          if (!user.security.resetPasswordToken) return res.status(401).send("Invalid token. Please try again.");
+
           // Hash the new password
           const hashedPassword = await bcrypt.hash(newPassword, 10);
 
