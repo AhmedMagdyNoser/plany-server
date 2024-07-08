@@ -330,15 +330,18 @@ module.exports = {
         jwt.verify(token, process.env.PASSWORD_RESET_TOKEN_SECRET, async (error, decoded) => {
           if (error) return res.status(401).send("Invalid token. Please try again.");
 
-          const user = await User.findOne({ email: decoded.email });
+          // Check if the user has a reset password token
+          const user = await User.findOne({ email: decoded.email }).select("+security.resetPasswordToken");
           if (!user.security.resetPasswordToken) return res.status(401).send("Invalid token. Please try again.");
 
           // Hash the new password
           const hashedPassword = await bcrypt.hash(newPassword, 10);
 
           // Update the password and remove the reset password token
-          await User.updateOne({ email: decoded.email }, { password: hashedPassword, "security.resetPasswordToken": "" });
+          user.password = hashedPassword;
+          user.security.resetPasswordToken = "";
 
+          await user.save();
           res.send("Password reset successfully.");
         });
       } catch (error) {
