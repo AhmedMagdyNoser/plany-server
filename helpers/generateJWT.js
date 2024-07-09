@@ -9,7 +9,7 @@ function generateAccessToken(user) {
         lastName: user.lastName,
         email: user.email,
         emailVerified: user.emailVerified,
-        profileImg: user.profileImg,
+        imgUrl: user.imgUrl,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },

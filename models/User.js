@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema(
     lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true, index: true },
     emailVerified: { type: Boolean, default: false },
-    profileImg: { type: String, default: "" },
+    imgUrl: { type: String, default: "" },
     password: { type: String, required: true, select: false },
     tasks: { type: [tasksSchema], default: [] },
     notes: { type: [noteSchema], default: [] },
