@@ -18,7 +18,7 @@ module.exports = {
         async (error, result) => {
           if (error) return res.status(500).send(error.message);
           try {
-            const user = await User.findByIdAndUpdate(req.user._id, { profileImg: result.secure_url }, { new: true });
+            const user = await User.findByIdAndUpdate(req.user._id, { imgUrl: result.secure_url }, { new: true });
             res.send(user);
           } catch (error) {
             res.status(500).send(error.message);
@@ -27,6 +27,17 @@ module.exports = {
       );
     },
   ],
+
+  // ---------------------------------------
+
+  deleteImg: async (req, res) => {
+    try {
+      const user = await User.findByIdAndUpdate(req.user._id, { imgUrl: "" }, { new: true });
+      res.send(user);
+    } catch (error) {
+      res.status(500).send(error.message);
+    }
+  },
 
   // ---------------------------------------
 
