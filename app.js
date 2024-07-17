@@ -12,7 +12,7 @@ require("./config/database")();
 
 // ------------------------ Middlewares ------------------------
 
-app.use(corsHandler());
+app.use(corsHandler(JSON.parse(process.env.WHITE_LIST)));
 
 app.use(cookiesParser);
 
