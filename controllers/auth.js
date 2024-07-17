@@ -99,16 +99,17 @@ module.exports = {
   // ---------------------------------------
 
   refreshAccessToken: async (req, res) => {
+    const refreshErrorMsg = "Invalid refresh token.";
     try {
       // Get the refresh token from the cookies
       const refreshToken = req.cookies?.refreshToken;
-      if (!refreshToken) return res.status(401).send("Please login first.");
+      if (!refreshToken) return res.status(401).send(refreshErrorMsg);
       // Check if the refresh token exists
       const user = await User.findOne({ "security.refreshToken": refreshToken });
-      if (!user) return res.status(403).send("Invalid refresh token.");
+      if (!user) return res.status(403).send(refreshErrorMsg);
       // Check if the refresh token is expired
       jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (error) => {
-        if (error) return res.status(403).send("Invalid refresh token.");
+        if (error) return res.status(403).send(refreshErrorMsg);
         // Generate a new access token and send it as a response
         res.send(generateAccessToken(user));
       });
