@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const colors = require("../helpers/colors");
 
 mongoose.plugin((schema) => schema.set("versionKey", false));
 
@@ -25,7 +26,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, index: true },
     emailVerified: { type: Boolean, default: false },
     imgUrl: { type: String, default: "" },
-    favColor: { type: String, enum: ["red", "green", "blue", "orange", "fuchsia"], default: "blue" },
+    favColor: { type: String, enum: colors, default: "blue" },
     password: { type: String, required: true, select: false },
     tasks: { type: [tasksSchema], default: [] },
     notes: { type: [noteSchema], default: [] },

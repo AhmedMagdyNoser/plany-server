@@ -5,7 +5,7 @@ const cloudinary = require("../config/cloudinary");
 const upload = require("../middlewares/multer");
 
 const { getErrorMsg } = require("../middlewares/validators");
-const { validateNames, requirePassword, validateNewPassword } = require("../middlewares/validators/user");
+const { validateNames, requirePassword, validateNewPassword, validateColor } = require("../middlewares/validators/user");
 
 module.exports = {
   uploadImg: [
@@ -83,6 +83,22 @@ module.exports = {
         await user.save();
 
         res.send("Password changed successfully.");
+      } catch (error) {
+        res.status(500).send(error.message);
+      }
+    },
+  ],
+
+  // ---------------------------------------
+
+  changeColor: [
+    validateColor,
+    getErrorMsg,
+    async (req, res) => {
+      try {
+        const { color } = req.body;
+        await User.findByIdAndUpdate(req.user._id, { favColor: color });
+        res.send("Favorite color changed successfully.");
       } catch (error) {
         res.status(500).send(error.message);
       }

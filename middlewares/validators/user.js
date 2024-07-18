@@ -1,5 +1,6 @@
 const { body, validationResult } = require("express-validator");
 const { PURPOSES } = require("../../helpers/mailSender");
+const colors = require("../../helpers/colors");
 
 const validateNames = [
   body("firstName").trim().notEmpty().withMessage("Please provide a first name."),
@@ -40,6 +41,13 @@ const validatePurpose = body("purpose")
   .isIn([PURPOSES.RESET_PASSWORD, PURPOSES.VERIFY_EMAIL, PURPOSES.CHANGE_EMAIL])
   .withMessage(`Purpose must be one of the following: ${Object.values(PURPOSES).join(", ")}.`);
 
+const validateColor = body("color")
+  .trim()
+  .notEmpty()
+  .withMessage("Please provide a color.")
+  .isIn(colors)
+  .withMessage(`Color must be one of the following: ${colors.join(", ")}.`);
+
 module.exports = {
   validateNames,
   validateEmail,
@@ -48,4 +56,5 @@ module.exports = {
   validateNewPassword,
   requirePassword,
   validatePurpose,
+  validateColor,
 };
