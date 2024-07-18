@@ -10,6 +10,7 @@ function generateAccessToken(user) {
         email: user.email,
         emailVerified: user.emailVerified,
         imgUrl: user.imgUrl,
+        favColor: user.favColor,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
