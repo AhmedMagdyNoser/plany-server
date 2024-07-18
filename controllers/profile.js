@@ -88,4 +88,23 @@ module.exports = {
       }
     },
   ],
+
+  // ---------------------------------------
+
+  deleteAccount: [
+    requirePassword,
+    getErrorMsg,
+    async (req, res) => {
+      try {
+        const { password } = req.body;
+        const user = await User.findById(req.user._id).select("+password");
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) return res.status(401).send("The password is not correct.");
+        await User.findByIdAndDelete(req.user._id);
+        res.send("Account deleted successfully.");
+      } catch (error) {
+        res.status(500).send(error.message);
+      }
+    },
+  ],
 };

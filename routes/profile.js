@@ -10,4 +10,6 @@ Router.patch("/change-name", controller.changeName);
 
 Router.patch("/change-password", controller.changePassword);
 
+Router.delete("/delete-account", controller.deleteAccount);
+
 module.exports = Router;
