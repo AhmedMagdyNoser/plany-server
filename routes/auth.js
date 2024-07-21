@@ -16,4 +16,6 @@ Router.post("/verify-verification-code", controller.verifyVerificationCode);
 
 Router.patch("/reset-password", controller.resetPassword);
 
+Router.post("/forgot-password/mail-code", controller.forgotPasswordMailCode);
+
 module.exports = Router;

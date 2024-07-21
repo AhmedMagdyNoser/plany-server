@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 
 const { generateAccessToken, generateRefreshToken } = require("../helpers/generateJWT");
 const { PURPOSES, sendVerificationCodeToEmail } = require("../helpers/mailSender");
+const generateVerificationCode = require("../helpers/generateVerificationCode");
 const cookiesOptions = require("../helpers/cookiesOptions");
 
 const { body } = require("express-validator");
@@ -119,6 +120,32 @@ module.exports = {
   },
 
   // ---------------------------------------
+
+  forgotPasswordMailCode: [
+    validateEmail,
+    getErrorMsg,
+    async (req, res) => {
+      try {
+        const { email } = req.body;
+        // Check if the user exists
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).send("User not found.");
+        // Check if the user email is not verified
+        if (!user.emailVerified) return res.status(401).send("Your email is not verified.");
+        // Generate a verification code
+        const { hashedVerificationCode, verificationCode, verificationCodeExpiration } = await generateVerificationCode();
+        // Save it for the current user
+        await user.updateOne({
+          "security.resetPasswordVerification": { code: hashedVerificationCode, expiration: verificationCodeExpiration },
+        });
+        // Send it to the his email
+        await sendVerificationCodeToEmail(email, PURPOSES.RESET_PASSWORD, verificationCode);
+        return res.sendStatus(200);
+      } catch (error) {
+        res.status(500).send(error.message);
+      }
+    },
+  ],
 
   sendVerificationCode: [
     validateEmail,
