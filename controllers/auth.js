@@ -290,8 +290,13 @@ module.exports = {
             user.security.changeEmailVerification.expiration = null;
             user.security.changeEmailVerification.newEmail = "";
 
+            // Generate a refresh token and set it as a cookie
+            const refreshToken = generateRefreshToken(email);
+            user.security.refreshToken = refreshToken;
+            res.cookie("refreshToken", refreshToken, cookiesOptions);
+
             await user.save();
-            return res.send("Email changed successfully.");
+            return res.send(generateAccessToken(user));
           }
           default:
             return res.status(400).send(`Please provide a valid purpose: ${Object.values(PURPOSES).join(", ")}.`);
