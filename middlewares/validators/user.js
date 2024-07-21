@@ -36,6 +36,8 @@ const validateColor = body("color")
   .isIn(colors)
   .withMessage(`Color must be one of the following: ${colors.join(", ")}.`);
 
+  const validateCode = body("code").trim().notEmpty().withMessage("Please provide the verification code.");
+
 module.exports = {
   validateNames,
   validateEmail,
@@ -44,4 +46,5 @@ module.exports = {
   validateNewPassword,
   requirePassword,
   validateColor,
+  validateCode,
 };

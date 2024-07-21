@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 
 const { generateAccessToken, generateRefreshToken } = require("../helpers/generateJWT");
 const { PURPOSES, sendVerificationCodeToEmail } = require("../helpers/mailSender");
-const generateVerificationCode = require("../helpers/generateVerificationCode");
+const { generateVerificationCode, validateVerificationCode } = require("../helpers/verificationCode");
 const cookiesOptions = require("../helpers/cookiesOptions");
 
 const { body } = require("express-validator");
@@ -15,6 +15,7 @@ const {
   validatePassword,
   validateNewPassword,
   requirePassword,
+  validateCode,
 } = require("../middlewares/validators/user");
 
 module.exports = {
@@ -149,7 +150,7 @@ module.exports = {
 
   forgotPasswordVerifyCode: [
     validateEmail,
-    body("code").trim().notEmpty().withMessage("Please provide the verification code."),
+    validateCode,
     getErrorMsg,
     async (req, res) => {
       try {
@@ -159,14 +160,16 @@ module.exports = {
           "+security.resetPasswordVerification.code +security.resetPasswordVerification.expiration"
         );
         if (!user) return res.status(404).send("User not found.");
-        // Validate the verification code
+
         const { resetPasswordVerification } = user.security;
-        if (!resetPasswordVerification.code || !resetPasswordVerification.expiration)
-          return res.status(400).send("No verification code found.");
-        if (Date.now() > resetPasswordVerification.expiration)
-          return res.status(401).send("The verification code has expired.");
-        const isMatch = await bcrypt.compare(code, resetPasswordVerification.code);
-        if (!isMatch) return res.status(401).send("Invalid verification code.");
+
+        // Validate the verification code
+        const validation = await validateVerificationCode(
+          resetPasswordVerification.code,
+          resetPasswordVerification.expiration,
+          code
+        );
+        if (!validation.valid) return res.status(validation.status).send(validation.message);
         // Generate a reset password token
         const resetPasswordToken = jwt.sign({ email }, process.env.PASSWORD_RESET_TOKEN_SECRET, {
           expiresIn: `${process.env.PASSWORD_RESET_TOKEN_LIFE}s`,

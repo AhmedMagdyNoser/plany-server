@@ -12,7 +12,7 @@ Router.patch("/change-name", controller.changeName);
 
 Router.post("/change-email/mail-code", controller.changeEmailMailCode);
 
-// Router.patch("/change-email/verify-code", controller.changeEmailVerifyCode);
+Router.patch("/change-email/verify-code", controller.changeEmailVerifyCode);
 
 // Router.post("/verify-email/mail-code", controller.verifyEmailMailCode);
 

@@ -11,9 +11,12 @@ const {
   validateNewEmail,
   validateNewPassword,
   validateColor,
+  validateCode,
 } = require("../middlewares/validators/user");
-const generateVerificationCode = require("../helpers/generateVerificationCode");
+const { generateVerificationCode, validateVerificationCode } = require("../helpers/verificationCode");
 const { PURPOSES, sendVerificationCodeToEmail } = require("../helpers/mailSender");
+const { generateRefreshToken, generateAccessToken } = require("../helpers/generateJWT");
+const cookiesOptions = require("../helpers/cookiesOptions");
 
 module.exports = {
   uploadImg: [
@@ -113,6 +116,51 @@ module.exports = {
         // Send it to the the NEW email
         await sendVerificationCodeToEmail(newEmail, PURPOSES.CHANGE_EMAIL, verificationCode);
         return res.sendStatus(200);
+      } catch (error) {
+        res.status(500).send(error.message);
+      }
+    },
+  ],
+
+  // ---------------------------------------
+
+  changeEmailVerifyCode: [
+    validateCode,
+    getErrorMsg,
+    async (req, res) => {
+      try {
+        const { code } = req.body;
+        const user = await User.findById(req.user._id).select(
+          "+security.changeEmailVerification.code " +
+            "+security.changeEmailVerification.expiration " +
+            "+security.changeEmailVerification.newEmail"
+        );
+        const { changeEmailVerification } = user.security;
+
+        // Validate the verification code
+        const validation = await validateVerificationCode(
+          changeEmailVerification.code,
+          changeEmailVerification.expiration,
+          code
+        );
+        if (!validation.valid) return res.status(400).send(validation.message);
+
+        // Change the email and mark it as verified
+        user.email = changeEmailVerification.newEmail;
+        user.emailVerified = true;
+
+        // invalidate the verification code
+        user.security.changeEmailVerification.code = "";
+        user.security.changeEmailVerification.expiration = null;
+        user.security.changeEmailVerification.newEmail = "";
+
+        // Generate a refresh token and set it as a cookie
+        const refreshToken = generateRefreshToken(changeEmailVerification.newEmail);
+        user.security.refreshToken = refreshToken;
+        res.cookie("refreshToken", refreshToken, cookiesOptions);
+
+        await user.save();
+        return res.send(generateAccessToken(user));
       } catch (error) {
         res.status(500).send(error.message);
       }
