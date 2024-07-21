@@ -147,6 +147,46 @@ module.exports = {
     },
   ],
 
+  // ---------------------------------------
+
+  forgotPasswordVerifyCode: [
+    validateEmail,
+    body("code").trim().notEmpty().withMessage("Please provide the verification code."),
+    getErrorMsg,
+    async (req, res) => {
+      try {
+        const { email, code } = req.body;
+        // Check if the user exists
+        const user = await User.findOne({ email }).select(
+          "+security.resetPasswordVerification.code +security.resetPasswordVerification.expiration"
+        );
+        if (!user) return res.status(404).send("User not found.");
+        // Validate the verification code
+        const { resetPasswordVerification } = user.security;
+        if (!resetPasswordVerification.code || !resetPasswordVerification.expiration)
+          return res.status(400).send("No verification code found.");
+        if (Date.now() > resetPasswordVerification.expiration)
+          return res.status(401).send("The verification code has expired.");
+        const isMatch = await bcrypt.compare(code, resetPasswordVerification.code);
+        if (!isMatch) return res.status(401).send("Invalid verification code.");
+        // Generate a reset password token
+        const resetPasswordToken = jwt.sign({ email }, process.env.PASSWORD_RESET_TOKEN_SECRET, {
+          expiresIn: `${process.env.PASSWORD_RESET_TOKEN_LIFE}s`,
+        });
+        user.security.resetPasswordToken = resetPasswordToken;
+        // Invalidate the verification code
+        user.security.resetPasswordVerification.code = "";
+        user.security.resetPasswordVerification.expiration = null;
+        await user.save();
+        return res.send(resetPasswordToken);
+      } catch (error) {
+        res.status(500).send(error.message);
+      }
+    },
+  ],
+
+  // ---------------------------------------
+
   sendVerificationCode: [
     validateEmail,
     validatePurpose,
