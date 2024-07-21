@@ -1,5 +1,4 @@
-const { body, validationResult } = require("express-validator");
-const { PURPOSES } = require("../../helpers/mailSender");
+const { body } = require("express-validator");
 const colors = require("../../helpers/colors");
 
 const validateNames = [
@@ -9,12 +8,8 @@ const validateNames = [
 
 const validateEmail = body("email").trim().toLowerCase().isEmail().withMessage("Please provide a valid email address.");
 
-// The following is used only in the send-verification-code route where the purpose is to change email
 const validateNewEmail = body("newEmail")
-  .if(body("purpose").equals(PURPOSES.CHANGE_EMAIL))
   .trim()
-  .notEmpty()
-  .withMessage("A new email is required for changing email.")
   .toLowerCase()
   .isEmail()
   .withMessage("Please provide a valid new email address.");
@@ -34,13 +29,6 @@ const validateNewPassword = body("newPassword")
 // The following is to required password only WITHOUT validation
 const requirePassword = body("password").notEmpty().withMessage("Please provide your password.");
 
-const validatePurpose = body("purpose")
-  .trim()
-  .notEmpty()
-  .withMessage("Please provide a purpose.")
-  .isIn([PURPOSES.RESET_PASSWORD, PURPOSES.VERIFY_EMAIL, PURPOSES.CHANGE_EMAIL])
-  .withMessage(`Purpose must be one of the following: ${Object.values(PURPOSES).join(", ")}.`);
-
 const validateColor = body("color")
   .trim()
   .notEmpty()
@@ -55,6 +43,5 @@ module.exports = {
   validatePassword,
   validateNewPassword,
   requirePassword,
-  validatePurpose,
   validateColor,
 };

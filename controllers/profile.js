@@ -5,7 +5,15 @@ const cloudinary = require("../config/cloudinary");
 const upload = require("../middlewares/multer");
 
 const { getErrorMsg } = require("../middlewares/validators");
-const { validateNames, requirePassword, validateNewPassword, validateColor } = require("../middlewares/validators/user");
+const {
+  validateNames,
+  requirePassword,
+  validateNewEmail,
+  validateNewPassword,
+  validateColor,
+} = require("../middlewares/validators/user");
+const generateVerificationCode = require("../helpers/generateVerificationCode");
+const { PURPOSES, sendVerificationCodeToEmail } = require("../helpers/mailSender");
 
 module.exports = {
   uploadImg: [
@@ -14,7 +22,7 @@ module.exports = {
       if (!req.file) return res.status(400).send("Please upload an image.");
       cloudinary.uploader.upload(
         req.file.path,
-        { transformation: [{ width: 500, height: 500, gravity: "face", crop: "thumb" }] },
+        { transformation: [{ width: 500, height: 500, gravity: "face" }] },
         async (error, result) => {
           if (error) return res.status(500).send(error.message);
           try {
@@ -41,6 +49,22 @@ module.exports = {
 
   // ---------------------------------------
 
+  changeColor: [
+    validateColor,
+    getErrorMsg,
+    async (req, res) => {
+      try {
+        const { color } = req.body;
+        await User.findByIdAndUpdate(req.user._id, { favColor: color });
+        res.send("Favorite color changed successfully.");
+      } catch (error) {
+        res.status(500).send(error.message);
+      }
+    },
+  ],
+
+  // ---------------------------------------
+
   changeName: [
     ...validateNames,
     getErrorMsg,
@@ -56,6 +80,39 @@ module.exports = {
         await user.save();
 
         res.send(user);
+      } catch (error) {
+        res.status(500).send(error.message);
+      }
+    },
+  ],
+
+  // ---------------------------------------
+
+  changeEmailMailCode: [
+    validateNewEmail,
+    getErrorMsg,
+    async (req, res) => {
+      try {
+        const { newEmail } = req.body;
+        const user = await User.findById(req.user._id);
+        // Check if the new email is the same as the current email
+        if (user.email === newEmail) return res.status(400).send("Please provide a different email.");
+        // Check if the new email is already registered.
+        const existingEmail = await User.findOne({ email: newEmail });
+        if (existingEmail) return res.status(409).send("Looks like this email already exists.");
+        // Generate a verification code
+        const { hashedVerificationCode, verificationCode, verificationCodeExpiration } = await generateVerificationCode();
+        // Save it for the current user
+        await user.updateOne({
+          "security.changeEmailVerification": {
+            code: hashedVerificationCode,
+            expiration: verificationCodeExpiration,
+            newEmail,
+          },
+        });
+        // Send it to the the NEW email
+        await sendVerificationCodeToEmail(newEmail, PURPOSES.CHANGE_EMAIL, verificationCode);
+        return res.sendStatus(200);
       } catch (error) {
         res.status(500).send(error.message);
       }
@@ -83,22 +140,6 @@ module.exports = {
         await user.save();
 
         res.send("Password changed successfully.");
-      } catch (error) {
-        res.status(500).send(error.message);
-      }
-    },
-  ],
-
-  // ---------------------------------------
-
-  changeColor: [
-    validateColor,
-    getErrorMsg,
-    async (req, res) => {
-      try {
-        const { color } = req.body;
-        await User.findByIdAndUpdate(req.user._id, { favColor: color });
-        res.send("Favorite color changed successfully.");
       } catch (error) {
         res.status(500).send(error.message);
       }
