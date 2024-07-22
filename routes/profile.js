@@ -14,9 +14,9 @@ Router.post("/change-email/mail-code", controller.changeEmailMailCode);
 
 Router.patch("/change-email/verify-code", controller.changeEmailVerifyCode);
 
-// Router.post("/verify-email/mail-code", controller.verifyEmailMailCode);
+Router.post("/verify-email/mail-code", controller.verifyEmailMailCode);
 
-// Router.patch("/verify-email/verify-code", controller.verifyEmailVerifyCode);
+Router.patch("/verify-email/verify-code", controller.verifyEmailVerifyCode);
 
 Router.patch("/change-password", controller.changePassword);
 

@@ -169,6 +169,65 @@ module.exports = {
 
   // ---------------------------------------
 
+  verifyEmailMailCode: [
+    getErrorMsg,
+    async (req, res) => {
+      try {
+        const user = await User.findById(req.user._id);
+        if (user.emailVerified) return res.status(400).send("Your email is already verified.");
+        const { hashedVerificationCode, verificationCode, verificationCodeExpiration } = await generateVerificationCode();
+        await user.updateOne({
+          "security.verifyEmailVerification": {
+            code: hashedVerificationCode,
+            expiration: verificationCodeExpiration,
+          },
+        });
+        await sendVerificationCodeToEmail(user.email, PURPOSES.VERIFY_EMAIL, verificationCode);
+        return res.sendStatus(200);
+      } catch (error) {
+        res.status(500).send(error.message);
+      }
+    },
+  ],
+
+  // ---------------------------------------
+
+  verifyEmailVerifyCode: [
+    validateCode,
+    getErrorMsg,
+    async (req, res) => {
+      try {
+        const { code } = req.body;
+        const user = await User.findById(req.user._id).select(
+          "+security.verifyEmailVerification.code " + "+security.verifyEmailVerification.expiration"
+        );
+        const { verifyEmailVerification } = user.security;
+
+        // Validate the verification code
+        const validation = await validateVerificationCode(
+          verifyEmailVerification.code,
+          verifyEmailVerification.expiration,
+          code
+        );
+        if (!validation.valid) return res.status(validation.status).send(validation.message);
+
+        // Verify the email
+        user.emailVerified = true;
+
+        // Invalidate the verification
+        user.security.verifyEmailVerification.code = "";
+        user.security.verifyEmailVerification.expiration = null;
+
+        await user.save();
+        return res.sendStatus(200);
+      } catch (error) {
+        res.status(500).send(error.message);
+      }
+    },
+  ],
+
+  // ---------------------------------------
+
   changePassword: [
     requirePassword,
     validateNewPassword,
