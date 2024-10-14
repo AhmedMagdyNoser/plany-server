@@ -22,6 +22,8 @@ app.use(express.urlencoded({ extended: false }));
 
 // ------------------------ Routes ------------------------
 
+app.get("/", (req, res) => res.send("Welcome to Plany App!"));
+
 app.use("/auth", require("./routes/auth"));
 
 app.use("/profile", verifyAccessToken, require("./routes/profile"));
