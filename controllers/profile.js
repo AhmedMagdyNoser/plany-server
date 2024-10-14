@@ -25,7 +25,7 @@ module.exports = {
       if (!req.file) return res.status(400).send("Please upload an image.");
       cloudinary.uploader.upload(
         req.file.path,
-        { transformation: [{ width: 500, height: 500, gravity: "face" }] },
+        { transformation: [{ width: 500, height: 500, crop: "fill", gravity: "face" }] },
         async (error, result) => {
           if (error) return res.status(500).send(error.message);
           try {
@@ -114,6 +114,7 @@ module.exports = {
           },
         });
         // Send it to the the NEW email
+        // return res.send(verificationCode); // For testing
         await sendVerificationCodeToEmail(newEmail, PURPOSES.CHANGE_EMAIL, verificationCode);
         return res.sendStatus(200);
       } catch (error) {
@@ -182,6 +183,7 @@ module.exports = {
             expiration: verificationCodeExpiration,
           },
         });
+        // return res.send(verificationCode); // For testing
         await sendVerificationCodeToEmail(user.email, PURPOSES.VERIFY_EMAIL, verificationCode);
         return res.sendStatus(200);
       } catch (error) {

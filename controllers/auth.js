@@ -138,6 +138,7 @@ module.exports = {
           "security.resetPasswordVerification": { code: hashedVerificationCode, expiration: verificationCodeExpiration },
         });
         // Send it to the his email
+        // return res.send(verificationCode); // For testing
         await sendVerificationCodeToEmail(email, PURPOSES.RESET_PASSWORD, verificationCode);
         return res.sendStatus(200);
       } catch (error) {
